@@ -1,0 +1,113 @@
+<#@ template debug="false" hostspecific="true" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+namespace Shipwreck.TelephoneNumber;
+
+partial class JapaneseTelephoneNumber
+{
+    private static string FormatCore(long v)
+    {
+        if (10_0000_0000 <= v && v <= 90_9999_9999)
+        {
+            return v.ToString("'0'00'-'0000'-'0000");
+        }
+        if (10000_0000 <= v && v <= 99999_9999)
+        {
+<#
+
+var bn = new HashSet<string>();
+var cn = new HashSet<string>();
+var dn = new HashSet<string>();
+var en = new HashSet<string>();
+
+using (var sr = new System.IO.StreamReader(Host.ResolvePath("../../../data/ja.csv"), Encoding.GetEncoding(932)))
+{
+    for (var l = sr.ReadLine(); l != null; l = sr.ReadLine())
+    {
+        var cp = l.Split(',');
+        if (cp.Length >= 4 && int.TryParse(cp[1], out var i))
+        {
+            var t = cp[2];
+            if (t == "BCDE" && 1 <= i && i < 10)
+            {
+                bn.Add(cp[1]);
+            }
+            else if (t == "CDE" && 10 <= i && i < 100)
+            {
+                cn.Add(cp[1]);
+            }
+            else if (t == "DE" && 100 <= i && i < 1000)
+            {
+                dn.Add(cp[1]);
+            }
+            else if (t == "E" && 1000 <= i && i < 10000)
+            {
+                en.Add(cp[1]);
+            }
+            else
+            {
+                throw new Exception();
+            }
+        }
+    }
+}
+#>
+            switch (v / 1_0_0000)
+            {
+<#
+foreach (var n in en)
+{
+#>
+                case <#= n #>:
+<#
+}
+#>
+                    return v.ToString("'0'0000'-'0'-'0000");
+            }
+            switch (v / 1_00_0000)
+            {
+                case 120:
+                    return v.ToString("'0'000'-'000'-'000");
+
+<#
+foreach (var n in dn.Where(e => bn.Any(p => e.StartsWith(p)) || cn.Any(p => e.StartsWith(p))).OrderBy(e => e))
+{
+#>
+                case <#= n #>:
+<#
+}
+#>
+                    return v.ToString("'0'000'-'00'-'0000");
+            }
+            switch (v / 1_000_0000)
+            {
+<#
+foreach (var n in cn.OrderBy(e => e))
+{
+#>
+                case <#= n #>:
+<#
+}
+#>
+                    return v.ToString("'0'00'-'000'-'0000");
+            }
+            switch (v / 1_0000_0000)
+            {
+<#
+foreach (var n in bn.OrderBy(e => e))
+{
+#>
+                case <#= n #>:
+<#
+}
+#>
+                    return v.ToString("'0'0'-'0000'-'0000");
+            }
+            return v.ToString("'0'000'-'00'-'0000");
+        }
+        return null;
+    }
+}
