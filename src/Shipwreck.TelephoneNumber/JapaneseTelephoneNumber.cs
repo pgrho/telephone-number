@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Shipwreck.TelephoneNumber;
 
-public static partial class JapaneseTelephoneNumber
+public sealed partial class JapaneseTelephoneNumber : ITelephoneNumberFormatInfo
 {
     public static string Sanitize(string telephoneNo)
     {
@@ -26,4 +26,8 @@ public static partial class JapaneseTelephoneNumber
         }
         return c;
     }
+
+    string ITelephoneNumberFormatInfo.Format(string telephoneNo) => Format(telephoneNo);
+
+    string ITelephoneNumberFormatInfo.Sanitize(string telephoneNo) => Sanitize(telephoneNo);
 }
